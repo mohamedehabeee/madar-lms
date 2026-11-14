@@ -35,13 +35,51 @@ import Login from "./Pages/Login";
 import Dashboard from "./Pages/Dashboard";
 import { INITIAL_COURSES, INITIAL_ACCESS_CODES, DEMO_USERS } from "./Services/mockData";
 
-// الصعود التلقائي لأعلى الصفحة عند الانتقال بين الصفحات
-function ScrollToTopOnNavigate() {
+// الصعود التلقائي لأعلى الصفحة + تشغيل أنيميشن الظهور مع السكرول في كل الصفحات
+function ScrollToTopAndAnimate() {
   const { pathname } = useLocation();
+
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
+
+    const timer = setTimeout(() => {
+      const elements = document.querySelectorAll("main section, main .grid > div");
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("is-visible");
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.08, rootMargin: "0px 0px -30px 0px" }
+      );
+
+      elements.forEach((el, index) => {
+        if (index > 0) {
+          el.classList.add("scroll-reveal");
+          observer.observe(el);
+        }
+      });
+
+      return () => observer.disconnect();
+    }, 60);
+
+    return () => clearTimeout(timer);
   }, [pathname]);
+
   return null;
+}
+
+// غلاف لتشغيل أنيميشن الدخول القوي عند الانتقال من صفحة لصفحة
+function AnimatedPageContainer({ children }) {
+  const location = useLocation();
+  return (
+    <div key={location.pathname} className="page-transition-wrapper">
+      {children}
+    </div>
+  );
 }
 
 // شريط تقدم التصفح العلوي + زر الصعود السريع
@@ -307,7 +345,7 @@ function WalletPaymentPage({ currentUser, transactions, onAddBalance, onDemoLogi
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 animate-fade-up">
+    <div className="max-w-6xl mx-auto space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-neutral-200 dark:border-neutral-800">
         <div className="flex items-center gap-3">
           <button
@@ -816,7 +854,6 @@ export default function App() {
     return localStorage.getItem("lms_theme") === "dark";
   });
 
-  // حالات المميزات التفاعلية الجديدة
   const [liveToast, setLiveToast] = useState(null);
   const [isCommandOpen, setIsCommandOpen] = useState(false);
 
@@ -1127,7 +1164,7 @@ export default function App() {
 
   return (
     <Router>
-      <ScrollToTopOnNavigate />
+      <ScrollToTopAndAnimate />
       <InteractiveScrollWidgets />
       <QuickCommandPalette
         isOpen={isCommandOpen}
@@ -1135,7 +1172,6 @@ export default function App() {
         courses={courses}
       />
 
-      {/* إشعار حي منبثق (Live Toast) */}
       {liveToast && (
         <div className="fixed bottom-6 right-6 z-50 max-w-sm bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 px-4 py-3.5 rounded-2xl shadow-2xl border border-neutral-800 dark:border-neutral-200 flex items-center gap-3 animate-toast">
           <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 dark:text-emerald-600 flex items-center justify-center shrink-0">
@@ -1166,118 +1202,120 @@ export default function App() {
           transactions={transactions}
         />
 
-        <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-fade-up">
-          <Routes>
-            <Route
-              path="/"
-              element={
-                <Home
-                  courses={courses}
-                  currentUser={currentUser}
-                  wishlist={wishlist}
-                  onToggleWishlist={handleToggleWishlist}
-                />
-              }
-            />
-            <Route
-              path="/courses"
-              element={
-                <Courses
-                  courses={courses}
-                  currentUser={currentUser}
-                  wishlist={wishlist}
-                  onToggleWishlist={handleToggleWishlist}
-                />
-              }
-            />
-            <Route
-              path="/courses/:id"
-              element={
-                <CourseDetails
-                  courses={courses}
-                  currentUser={currentUser}
-                  onEnrollWithWallet={handleEnrollWithWallet}
-                />
-              }
-            />
-            <Route
-              path="/learn/:id"
-              element={
-                <CoursePlayer
-                  courses={courses}
-                  currentUser={currentUser}
-                  onToggleLessonComplete={handleToggleLessonComplete}
-                />
-              }
-            />
-            <Route
-              path="/exam/:id"
-              element={
-                <ExamPage
-                  courses={courses}
-                  currentUser={currentUser}
-                  onSaveExamScore={handleSaveExamScore}
-                />
-              }
-            />
-            <Route
-              path="/dashboard"
-              element={
-                <Dashboard
-                  courses={courses}
-                  currentUser={currentUser}
-                  accessCodes={accessCodes}
-                  onAddCourse={handleAddCourse}
-                  onDeleteCourse={handleDeleteCourse}
-                  onAddLessonToCourse={handleAddLessonToCourse}
-                  onAddQuestionToCourse={handleAddQuestionToCourse}
-                  onUpdateProfileName={handleUpdateProfileName}
-                />
-              }
-            />
-            <Route
-              path="/wallet"
-              element={
-                <WalletPaymentPage
-                  currentUser={currentUser}
-                  transactions={transactions}
-                  onAddBalance={handleAddBalance}
-                  onDemoLogin={handleDemoLogin}
-                />
-              }
-            />
-            <Route
-              path="/login"
-              element={
-                <Login
-                  onDemoLogin={handleDemoLogin}
-                  onCustomAuth={handleCustomAuth}
-                />
-              }
-            />
-            <Route
-              path="*"
-              element={
-                <div className="text-center py-24 max-w-md mx-auto space-y-4">
-                  <div className="text-6xl font-black text-neutral-300 dark:text-neutral-800">
-                    404
+        <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 overflow-x-hidden">
+          <AnimatedPageContainer>
+            <Routes>
+              <Route
+                path="/"
+                element={
+                  <Home
+                    courses={courses}
+                    currentUser={currentUser}
+                    wishlist={wishlist}
+                    onToggleWishlist={handleToggleWishlist}
+                  />
+                }
+              />
+              <Route
+                path="/courses"
+                element={
+                  <Courses
+                    courses={courses}
+                    currentUser={currentUser}
+                    wishlist={wishlist}
+                    onToggleWishlist={handleToggleWishlist}
+                  />
+                }
+              />
+              <Route
+                path="/courses/:id"
+                element={
+                  <CourseDetails
+                    courses={courses}
+                    currentUser={currentUser}
+                    onEnrollWithWallet={handleEnrollWithWallet}
+                  />
+                }
+              />
+              <Route
+                path="/learn/:id"
+                element={
+                  <CoursePlayer
+                    courses={courses}
+                    currentUser={currentUser}
+                    onToggleLessonComplete={handleToggleLessonComplete}
+                  />
+                }
+              />
+              <Route
+                path="/exam/:id"
+                element={
+                  <ExamPage
+                    courses={courses}
+                    currentUser={currentUser}
+                    onSaveExamScore={handleSaveExamScore}
+                  />
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <Dashboard
+                    courses={courses}
+                    currentUser={currentUser}
+                    accessCodes={accessCodes}
+                    onAddCourse={handleAddCourse}
+                    onDeleteCourse={handleDeleteCourse}
+                    onAddLessonToCourse={handleAddLessonToCourse}
+                    onAddQuestionToCourse={handleAddQuestionToCourse}
+                    onUpdateProfileName={handleUpdateProfileName}
+                  />
+                }
+              />
+              <Route
+                path="/wallet"
+                element={
+                  <WalletPaymentPage
+                    currentUser={currentUser}
+                    transactions={transactions}
+                    onAddBalance={handleAddBalance}
+                    onDemoLogin={handleDemoLogin}
+                  />
+                }
+              />
+              <Route
+                path="/login"
+                element={
+                  <Login
+                    onDemoLogin={handleDemoLogin}
+                    onCustomAuth={handleCustomAuth}
+                  />
+                }
+              />
+              <Route
+                path="*"
+                element={
+                  <div className="text-center py-24 max-w-md mx-auto space-y-4">
+                    <div className="text-6xl font-black text-neutral-300 dark:text-neutral-800">
+                      404
+                    </div>
+                    <h2 className="text-xl font-black text-neutral-950 dark:text-white">
+                      الصفحة المطلوبة غير موجودة
+                    </h2>
+                    <p className="text-xs text-neutral-500">
+                      تأكد من صحة الرابط أو ارجع للصفحة الرئيسية لاستعراض الكورسات.
+                    </p>
+                    <Link
+                      to="/"
+                      className="inline-block px-6 py-3 rounded-xl bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-xs font-bold"
+                    >
+                      العودة للصفحة الرئيسية
+                    </Link>
                   </div>
-                  <h2 className="text-xl font-black text-neutral-950 dark:text-white">
-                    الصفحة المطلوبة غير موجودة
-                  </h2>
-                  <p className="text-xs text-neutral-500">
-                    تأكد من صحة الرابط أو ارجع للصفحة الرئيسية لاستعراض الكورسات.
-                  </p>
-                  <Link
-                    to="/"
-                    className="inline-block px-6 py-3 rounded-xl bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-xs font-bold"
-                  >
-                    العودة للصفحة الرئيسية
-                  </Link>
-                </div>
-              }
-            />
-          </Routes>
+                }
+              />
+            </Routes>
+          </AnimatedPageContainer>
         </main>
 
         <Footer />
