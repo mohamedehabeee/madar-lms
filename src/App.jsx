@@ -259,7 +259,7 @@ function QuickCommandPalette({ isOpen, onClose, courses }) {
 }
 
 // صفحة بوابة الدفع وشحن المحفظة المتكاملة
-function WalletPaymentPage({ currentUser, transactions, onAddBalance, onDemoLogin }) {
+function WalletPaymentPage({ currentUser, transactions, onAddBalance }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialAmount = Number(searchParams.get("amount")) || 500;
@@ -320,12 +320,13 @@ function WalletPaymentPage({ currentUser, transactions, onAddBalance, onDemoLogi
 
   const handlePaymentSubmit = (e) => {
     e.preventDefault();
+    if (!currentUser) {
+      navigate("/login");
+      return;
+    }
+
     const numericAmount = Number(amount);
     if (!numericAmount || numericAmount < 10) return;
-
-    if (!currentUser) {
-      onDemoLogin("student");
-    }
 
     setIsProcessing(true);
     setReceipt(null);
@@ -722,7 +723,7 @@ function WalletPaymentPage({ currentUser, transactions, onAddBalance, onDemoLogi
             <div className="flex items-center justify-between pt-4 border-t border-white/15 dark:border-neutral-950/15 text-xs">
               <div>
                 <span className="block text-[10px] opacity-60">صاحب المحفظة</span>
-                <strong className="font-bold">{currentUser?.name || "حساب طالب (يتفعل فور الشحن)"}</strong>
+                <strong className="font-bold">{currentUser?.name || "يرجى تسجيل الدخول أولاً"}</strong>
               </div>
               <div className="text-left font-mono">
                 <span className="block text-[10px] opacity-60">رقم المحفظة</span>
@@ -803,14 +804,14 @@ export default function App() {
 
   const [registeredUsers, setRegisteredUsers] = useState(() => {
     const saved = localStorage.getItem("lms_registered_users");
-    return saved ? JSON.parse(saved) : [DEMO_USERS.student, DEMO_USERS.instructor];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem("lms_user");
     if (saved) {
       const parsed = JSON.parse(saved);
-      if (parsed.walletBalance === undefined) parsed.walletBalance = 1200;
+      if (parsed.walletBalance === undefined) parsed.walletBalance = 0;
       return parsed;
     }
     return null;
@@ -823,17 +824,7 @@ export default function App() {
 
   const [transactions, setTransactions] = useState(() => {
     const saved = localStorage.getItem("lms_transactions");
-    return saved
-      ? JSON.parse(saved)
-      : [
-          {
-            id: 1,
-            type: "credit",
-            amount: 1200,
-            label: "رصيد افتراضي لحساب المعاينة",
-            date: "اليوم"
-          }
-        ];
+    return saved ? JSON.parse(saved) : [];
   });
 
   const [notifications, setNotifications] = useState(() => {
@@ -922,56 +913,81 @@ export default function App() {
     ]);
   };
 
-  const handleDemoLogin = (role) => {
-    const targetRole = role === "instructor" || role === "admin" ? role : "student";
-    setCurrentUser(DEMO_USERS[targetRole]);
-    pushNotification(`تم تسجيل الدخول بحساب (${DEMO_USERS[targetRole].name})`);
+  // تأمين هذه الدالة بحيث لا تسمح أبداً بالدخول كمحاضر أو أدمن من أي زر خارجي
+  const handleDemoLogin = () => {
+    const safeStudent = {
+      ...DEMO_USERS.student,
+      role: "student",
+      walletBalance: 0
+    };
+    setCurrentUser(safeStudent);
+    pushNotification(`تم تسجيل الدخول بحساب طالب (${safeStudent.name})`);
   };
 
-  const handleCustomAuth = ({ mode, name, email, password, role }) => {
+  // نظام تسجيل ودخول محمي بدون مكافآت وبدون تسجيل محاضرين
+  const handleCustomAuth = ({ mode, name, email, password }) => {
     const cleanEmail = (email || "").toLowerCase().trim();
 
     if (mode === "register") {
+      if (
+        cleanEmail === "admin@madar-lms.com" ||
+        cleanEmail === "instructor@madar-lms.com"
+      ) {
+        return {
+          success: false,
+          message: "هذا البريد الإلكتروني مخصص لإدارة المنصة فقط ولا يمكن التسجيل به."
+        };
+      }
+
       const existing = registeredUsers.find((u) => u.email === cleanEmail);
       if (existing) {
-        pushNotification("البريد الإلكتروني مسجل مسبقاً! يمكنك تسجيل الدخول مباشرة.");
-        return;
+        return {
+          success: false,
+          message: "البريد الإلكتروني مسجل مسبقاً! يرجى تسجيل الدخول."
+        };
       }
+
+      // أي تسجيل جديد يكون لطالب فقط وبرصيد صفر
       const newUser = {
         id: `u-${Date.now()}`,
         name: name || "طالب مَدار",
         email: cleanEmail,
-        password: password || "123456",
-        role: role === "instructor" ? "instructor" : "student",
-        walletBalance: 200,
-        enrolledCourses: ["course-1"],
+        password: password,
+        role: "student",
+        walletBalance: 0,
+        enrolledCourses: [],
         completedLessons: [],
         examScores: {}
       };
+
       const updatedList = [...registeredUsers, newUser];
       setRegisteredUsers(updatedList);
       setCurrentUser(newUser);
-      logTransaction("credit", 200, "هدية ترحيبية لإنشاء حساب جديد");
-      pushNotification(`مرحباً بك يا ${newUser.name}! تم إنشاء حسابك وإضافة 200 ج.م هدية 🎉`);
+      pushNotification(`مرحباً بك يا ${newUser.name}! تم إنشاء حسابك بنجاح.`);
+      return { success: true };
     } else {
-      const found = registeredUsers.find((u) => u.email === cleanEmail);
-      if (found) {
-        setCurrentUser(found);
-        pushNotification(`مرحباً بعودتك يا ${found.name}!`);
-      } else {
-        const fallbackUser = {
-          id: `u-${Date.now()}`,
-          name: name || cleanEmail.split("@")[0] || "طالب مَدار",
-          email: cleanEmail,
-          role: cleanEmail.includes("instructor") || cleanEmail.includes("admin") ? "instructor" : "student",
-          walletBalance: 500,
-          enrolledCourses: ["course-1"],
-          completedLessons: [],
-          examScores: {}
-        };
-        setCurrentUser(fallbackUser);
-        pushNotification(`مرحباً بعودتك يا ${fallbackUser.name}!`);
+      // دخول الإدارة المحمي بباسورد رسمي فقط
+      if (
+        (cleanEmail === "admin@madar-lms.com" ||
+          cleanEmail === "instructor@madar-lms.com") &&
+        password === "admin123"
+      ) {
+        setCurrentUser(DEMO_USERS.instructor);
+        pushNotification("تم تسجيل الدخول بصلاحية إدارة المنصة");
+        return { success: true };
       }
+
+      const found = registeredUsers.find((u) => u.email === cleanEmail);
+      if (!found || found.password !== password) {
+        return {
+          success: false,
+          message: "البريد الإلكتروني أو كلمة المرور غير صحيحة."
+        };
+      }
+
+      setCurrentUser(found);
+      pushNotification(`مرحباً بعودتك يا ${found.name}!`);
+      return { success: true };
     }
   };
 
@@ -989,14 +1005,14 @@ export default function App() {
   };
 
   const handleAddBalance = (amount, customLabel) => {
-    const targetUser = currentUser || DEMO_USERS.student;
+    if (!currentUser) return;
     const numericAmount = Number(amount) || 0;
     const updated = {
-      ...targetUser,
-      walletBalance: (targetUser.walletBalance || 0) + numericAmount
+      ...currentUser,
+      walletBalance: (currentUser.walletBalance || 0) + numericAmount
     };
     setCurrentUser(updated);
-    setRegisteredUsers(registeredUsers.map((u) => (u.id === targetUser.id ? updated : u)));
+    setRegisteredUsers(registeredUsers.map((u) => (u.id === currentUser.id ? updated : u)));
     const labelText = customLabel || "شحن مباشر لرصيد المحفظة";
     logTransaction("credit", numericAmount, labelText);
     pushNotification(`تم ${labelText} بمبلغ +${numericAmount} ج.م بنجاح`);
@@ -1067,6 +1083,7 @@ export default function App() {
   };
 
   const handleAddCourse = (courseData) => {
+    if (currentUser?.role !== "instructor" && currentUser?.role !== "admin") return;
     const newId = `course-${Date.now()}`;
     const createdCourse = {
       id: newId,
@@ -1111,11 +1128,13 @@ export default function App() {
   };
 
   const handleDeleteCourse = (courseId) => {
+    if (currentUser?.role !== "instructor" && currentUser?.role !== "admin") return;
     setCourses(courses.filter((c) => c.id !== courseId));
     pushNotification("تم حذف الكورس من المنصة");
   };
 
   const handleAddLessonToCourse = (courseId, lessonData) => {
+    if (currentUser?.role !== "instructor" && currentUser?.role !== "admin") return;
     setCourses(
       courses.map((c) => {
         if (c.id !== courseId) return c;
@@ -1141,6 +1160,7 @@ export default function App() {
   };
 
   const handleAddQuestionToCourse = (courseId, questionData) => {
+    if (currentUser?.role !== "instructor" && currentUser?.role !== "admin") return;
     setCourses(
       courses.map((c) => {
         if (c.id !== courseId || !c.exam) return c;
@@ -1279,7 +1299,6 @@ export default function App() {
                     currentUser={currentUser}
                     transactions={transactions}
                     onAddBalance={handleAddBalance}
-                    onDemoLogin={handleDemoLogin}
                   />
                 }
               />
