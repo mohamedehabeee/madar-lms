@@ -580,6 +580,12 @@ export default function App() {
     return saved ? JSON.parse(saved) : INITIAL_ACCESS_CODES;
   });
 
+  // تخزين وجلب المستخدمين المسجلين في LocalStorage
+  const [registeredUsers, setRegisteredUsers] = useState(() => {
+    const saved = localStorage.getItem("lms_registered_users");
+    return saved ? JSON.parse(saved) : [DEMO_USERS.student, DEMO_USERS.instructor];
+  });
+
   const [currentUser, setCurrentUser] = useState(() => {
     const saved = localStorage.getItem("lms_user");
     if (saved) {
@@ -635,6 +641,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("lms_codes", JSON.stringify(accessCodes));
   }, [accessCodes]);
+
+  useEffect(() => {
+    localStorage.setItem("lms_registered_users", JSON.stringify(registeredUsers));
+  }, [registeredUsers]);
 
   useEffect(() => {
     localStorage.setItem("lms_wishlist", JSON.stringify(wishlist));
@@ -693,42 +703,61 @@ export default function App() {
     pushNotification(`تم تسجيل الدخول بحساب (${DEMO_USERS[targetRole].name})`);
   };
 
-  const handleCustomAuth = ({ mode, name, email }) => {
+  // نظام تسجيل حساب جديد أو تسجيل دخول حقيقي وتخزينه في LocalStorage
+  const handleCustomAuth = ({ mode, name, email, password, role }) => {
     const cleanEmail = (email || "").toLowerCase().trim();
 
-    if (
-      mode === "login" &&
-      (cleanEmail === "admin@madar-lms.com" || cleanEmail === "instructor@madar-lms.com")
-    ) {
-      setCurrentUser(DEMO_USERS.instructor);
-      pushNotification("تم تسجيل الدخول بصلاحية إدارة المنصة");
-      return;
-    }
-
-    const newUser = {
-      id: `u-${Date.now()}`,
-      name: name || "طالب مَدار",
-      email: cleanEmail,
-      role: "student",
-      walletBalance: mode === "register" ? 200 : 1200,
-      enrolledCourses: ["course-1"],
-      completedLessons: [],
-      examScores: {}
-    };
-    setCurrentUser(newUser);
     if (mode === "register") {
-      logTransaction("credit", 200, "هدية ترحيبية لإنشاء حساب طالب جديد");
+      const existing = registeredUsers.find((u) => u.email === cleanEmail);
+      if (existing) {
+        alert("البريد الإلكتروني مسجل مسبقاً! يجدر بك تسجيل الدخول.");
+        return;
+      }
+      const newUser = {
+        id: `u-${Date.now()}`,
+        name: name || "طالب مَدار",
+        email: cleanEmail,
+        password: password || "123456",
+        role: role === "instructor" ? "instructor" : "student",
+        walletBalance: 200,
+        enrolledCourses: ["course-1"],
+        completedLessons: [],
+        examScores: {}
+      };
+      const updatedList = [...registeredUsers, newUser];
+      setRegisteredUsers(updatedList);
+      setCurrentUser(newUser);
+      logTransaction("credit", 200, "هدية ترحيبية لإنشاء حساب جديد");
+      pushNotification(`مرحباً بك يا ${newUser.name}! تم إنشاء حسابك بنجاح 🎉`);
+    } else {
+      // وضع تسجيل الدخول
+      const found = registeredUsers.find((u) => u.email === cleanEmail);
+      if (found) {
+        setCurrentUser(found);
+        pushNotification(`مرحباً بعودتك يا ${found.name}!`);
+      } else {
+        // افتراضي لو مش موجود بنعمله لوجين سريع
+        const fallbackUser = {
+          id: `u-${Date.now()}`,
+          name: name || email.split("@")[0],
+          email: cleanEmail,
+          role: cleanEmail.includes("instructor") ? "instructor" : "student",
+          walletBalance: 500,
+          enrolledCourses: ["course-1"],
+          completedLessons: [],
+          examScores: {}
+        };
+        setCurrentUser(fallbackUser);
+        pushNotification(`مرحباً بعودتك يا ${fallbackUser.name}!`);
+      }
     }
-    pushNotification(
-      mode === "register"
-        ? `مرحباً بك يا ${newUser.name}! تم إنشاء حسابك وإضافة 200 ج.م هدية في محفظتك 🎉`
-        : `مرحباً بعودتك يا ${newUser.name}!`
-    );
   };
 
   const handleUpdateProfileName = (newName) => {
     if (!currentUser) return;
-    setCurrentUser({ ...currentUser, name: newName });
+    const updated = { ...currentUser, name: newName };
+    setCurrentUser(updated);
+    setRegisteredUsers(registeredUsers.map((u) => (u.id === currentUser.id ? updated : u)));
     pushNotification(`تم تحديث اسمك على المنصة والشهادات إلى: ${newName}`);
   };
 
@@ -739,10 +768,12 @@ export default function App() {
   const handleAddBalance = (amount, customLabel) => {
     const targetUser = currentUser || DEMO_USERS.student;
     const numericAmount = Number(amount) || 0;
-    setCurrentUser({
+    const updated = {
       ...targetUser,
       walletBalance: (targetUser.walletBalance || 0) + numericAmount
-    });
+    };
+    setCurrentUser(updated);
+    setRegisteredUsers(registeredUsers.map((u) => (u.id === targetUser.id ? updated : u)));
     const labelText = customLabel || "شحن مباشر لرصيد المحفظة";
     logTransaction("credit", numericAmount, labelText);
     pushNotification(`تم ${labelText} بمبلغ +${numericAmount} ج.م بنجاح`);
@@ -764,11 +795,14 @@ export default function App() {
       };
     }
 
-    setCurrentUser({
+    const updated = {
       ...currentUser,
       walletBalance: currentUser.walletBalance - course.price,
       enrolledCourses: [...new Set([...(currentUser.enrolledCourses || []), course.id])]
-    });
+    };
+
+    setCurrentUser(updated);
+    setRegisteredUsers(registeredUsers.map((u) => (u.id === currentUser.id ? updated : u)));
 
     logTransaction("debit", course.price, `شراء كورس: ${course.title}`);
     pushNotification(`تم الاشتراك في (${course.title}) عبر المحفظة`);
@@ -783,23 +817,27 @@ export default function App() {
     const completed = currentUser.completedLessons || [];
     const exists = completed.includes(lessonId);
 
-    setCurrentUser({
+    const updated = {
       ...currentUser,
       completedLessons: exists
         ? completed.filter((id) => id !== lessonId)
         : [...completed, lessonId]
-    });
+    };
+    setCurrentUser(updated);
+    setRegisteredUsers(registeredUsers.map((u) => (u.id === currentUser.id ? updated : u)));
   };
 
   const handleSaveExamScore = (courseId, resultData) => {
     if (!currentUser) return;
-    setCurrentUser({
+    const updated = {
       ...currentUser,
       examScores: {
         ...(currentUser.examScores || {}),
         [courseId]: resultData
       }
-    });
+    };
+    setCurrentUser(updated);
+    setRegisteredUsers(registeredUsers.map((u) => (u.id === currentUser.id ? updated : u)));
     pushNotification(`أنهيت الاختبار بنتيجة ${resultData.scorePercent}% وتم تحديث لوحة الشرف`);
   };
 
