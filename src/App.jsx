@@ -15,8 +15,15 @@ import {
   ArrowRight,
   Lock,
   Loader2,
-  Receipt
+  Receipt,
+  Search,
+  X,
+  ArrowUp,
+  BellRing,
+  BookOpen,
+  LayoutDashboard
 } from "lucide-react";
+import "./App.css";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Home from "./Pages/Home";
@@ -35,6 +42,182 @@ function ScrollToTopOnNavigate() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [pathname]);
   return null;
+}
+
+// شريط تقدم التصفح العلوي + زر الصعود السريع
+function InteractiveScrollWidgets() {
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [showTopBtn, setShowTopBtn] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const totalScroll = document.documentElement.scrollTop;
+      const windowHeight =
+        document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scroll = windowHeight > 0 ? (totalScroll / windowHeight) * 100 : 0;
+      setScrollProgress(scroll);
+      setShowTopBtn(totalScroll > 350);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  return (
+    <>
+      <div className="fixed top-0 left-0 right-0 h-1 z-50 bg-transparent pointer-events-none">
+        <div
+          className="h-full bg-emerald-500 transition-all duration-150 ease-out"
+          style={{ width: `${scrollProgress}%` }}
+        />
+      </div>
+
+      {showTopBtn && (
+        <button
+          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+          title="الصعود لأعلى"
+          className="fixed bottom-6 left-6 z-40 p-3 rounded-2xl bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 shadow-xl border border-neutral-800 dark:border-neutral-200 hover:scale-110 transition cursor-pointer animate-toast"
+        >
+          <ArrowUp className="w-4 h-4" />
+        </button>
+      )}
+    </>
+  );
+}
+
+// نافذة البحث والتنقل السريع (Ctrl + K)
+function QuickCommandPalette({ isOpen, onClose, courses }) {
+  const [query, setQuery] = useState("");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        if (isOpen) onClose();
+        else onClose("open");
+      } else if (e.key === "Escape" && isOpen) {
+        onClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  const filteredCourses = courses.filter(
+    (c) =>
+      c.title?.toLowerCase().includes(query.toLowerCase()) ||
+      c.instructor?.toLowerCase().includes(query.toLowerCase())
+  );
+
+  const handleSelect = (path) => {
+    onClose();
+    setQuery("");
+    navigate(path);
+  };
+
+  return (
+    <div
+      onClick={() => onClose()}
+      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-start justify-center pt-20 px-4"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="bg-white dark:bg-[#141414] border border-neutral-200 dark:border-neutral-800 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl animate-toast"
+      >
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-neutral-200 dark:border-neutral-800">
+          <Search className="w-5 h-5 text-emerald-500 shrink-0" />
+          <input
+            type="text"
+            autoFocus
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="ابحث عن كورس، محاضر، أو انتقل لصفحة..."
+            className="w-full bg-transparent text-sm font-bold text-neutral-950 dark:text-white focus:outline-none"
+          />
+          <button
+            onClick={() => onClose()}
+            className="p-1.5 rounded-lg bg-neutral-100 dark:bg-neutral-800 text-neutral-500 hover:text-neutral-950 dark:hover:text-white cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="max-h-80 overflow-y-auto p-3 space-y-4">
+          <div>
+            <span className="block px-3 pb-1.5 text-[11px] font-bold text-neutral-400">
+              الكورسات المتاحة ({filteredCourses.length})
+            </span>
+            <div className="space-y-1">
+              {filteredCourses.slice(0, 4).map((course) => (
+                <button
+                  key={course.id}
+                  onClick={() => handleSelect(`/courses/${course.id}`)}
+                  className="w-full p-2.5 rounded-xl hover:bg-neutral-100 dark:hover:bg-neutral-800/80 flex items-center justify-between text-right transition cursor-pointer"
+                >
+                  <div className="flex items-center gap-2.5">
+                    <BookOpen className="w-4 h-4 text-emerald-500 shrink-0" />
+                    <div>
+                      <p className="text-xs font-black text-neutral-900 dark:text-white">
+                        {course.title}
+                      </p>
+                      <span className="text-[10px] text-neutral-400">
+                        {course.instructor || "منصة مَدار"}
+                      </span>
+                    </div>
+                  </div>
+                  <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                    {course.price} ج.م
+                  </span>
+                </button>
+              ))}
+              {filteredCourses.length === 0 && (
+                <p className="text-center text-xs text-neutral-400 py-4">
+                  لا توجد كورسات مطابقة لبحثك
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="border-t border-neutral-200 dark:border-neutral-800 pt-3">
+            <span className="block px-3 pb-1.5 text-[11px] font-bold text-neutral-400">
+              وصول سريع
+            </span>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => handleSelect("/courses")}
+                className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                كل الكورسات
+              </button>
+              <button
+                onClick={() => handleSelect("/wallet")}
+                className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Wallet className="w-3.5 h-3.5 text-emerald-500" />
+                شحن المحفظة
+              </button>
+              <button
+                onClick={() => handleSelect("/dashboard")}
+                className="p-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                لوحة التحكم
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="px-5 py-2.5 bg-neutral-50 dark:bg-neutral-900/70 border-t border-neutral-200 dark:border-neutral-800 flex items-center justify-between text-[11px] text-neutral-400">
+          <span>اختصار لوحة المفاتيح: Ctrl + K</span>
+          <span>اضغط Esc للإغلاق</span>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // صفحة بوابة الدفع وشحن المحفظة المتكاملة
@@ -580,7 +763,6 @@ export default function App() {
     return saved ? JSON.parse(saved) : INITIAL_ACCESS_CODES;
   });
 
-  // تخزين وجلب المستخدمين المسجلين في LocalStorage
   const [registeredUsers, setRegisteredUsers] = useState(() => {
     const saved = localStorage.getItem("lms_registered_users");
     return saved ? JSON.parse(saved) : [DEMO_USERS.student, DEMO_USERS.instructor];
@@ -634,6 +816,10 @@ export default function App() {
     return localStorage.getItem("lms_theme") === "dark";
   });
 
+  // حالات المميزات التفاعلية الجديدة
+  const [liveToast, setLiveToast] = useState(null);
+  const [isCommandOpen, setIsCommandOpen] = useState(false);
+
   useEffect(() => {
     localStorage.setItem("lms_courses_v2", JSON.stringify(courses));
   }, [courses]);
@@ -678,10 +864,12 @@ export default function App() {
   }, [darkMode]);
 
   const pushNotification = (title) => {
-    setNotifications((prev) => [
-      { id: Date.now(), title, time: "الآن", read: false },
-      ...prev
-    ]);
+    const newNotif = { id: Date.now(), title, time: "الآن", read: false };
+    setNotifications((prev) => [newNotif, ...prev]);
+    setLiveToast(newNotif);
+    setTimeout(() => {
+      setLiveToast((current) => (current?.id === newNotif.id ? null : current));
+    }, 4000);
   };
 
   const logTransaction = (type, amount, label) => {
@@ -703,14 +891,13 @@ export default function App() {
     pushNotification(`تم تسجيل الدخول بحساب (${DEMO_USERS[targetRole].name})`);
   };
 
-  // نظام تسجيل حساب جديد أو تسجيل دخول حقيقي وتخزينه في LocalStorage
   const handleCustomAuth = ({ mode, name, email, password, role }) => {
     const cleanEmail = (email || "").toLowerCase().trim();
 
     if (mode === "register") {
       const existing = registeredUsers.find((u) => u.email === cleanEmail);
       if (existing) {
-        alert("البريد الإلكتروني مسجل مسبقاً! يجدر بك تسجيل الدخول.");
+        pushNotification("البريد الإلكتروني مسجل مسبقاً! يمكنك تسجيل الدخول مباشرة.");
         return;
       }
       const newUser = {
@@ -728,20 +915,18 @@ export default function App() {
       setRegisteredUsers(updatedList);
       setCurrentUser(newUser);
       logTransaction("credit", 200, "هدية ترحيبية لإنشاء حساب جديد");
-      pushNotification(`مرحباً بك يا ${newUser.name}! تم إنشاء حسابك بنجاح 🎉`);
+      pushNotification(`مرحباً بك يا ${newUser.name}! تم إنشاء حسابك وإضافة 200 ج.م هدية 🎉`);
     } else {
-      // وضع تسجيل الدخول
       const found = registeredUsers.find((u) => u.email === cleanEmail);
       if (found) {
         setCurrentUser(found);
         pushNotification(`مرحباً بعودتك يا ${found.name}!`);
       } else {
-        // افتراضي لو مش موجود بنعمله لوجين سريع
         const fallbackUser = {
           id: `u-${Date.now()}`,
-          name: name || email.split("@")[0],
+          name: name || cleanEmail.split("@")[0] || "طالب مَدار",
           email: cleanEmail,
-          role: cleanEmail.includes("instructor") ? "instructor" : "student",
+          role: cleanEmail.includes("instructor") || cleanEmail.includes("admin") ? "instructor" : "student",
           walletBalance: 500,
           enrolledCourses: ["course-1"],
           completedLessons: [],
@@ -763,6 +948,7 @@ export default function App() {
 
   const handleLogout = () => {
     setCurrentUser(null);
+    pushNotification("تم تسجيل الخروج بنجاح");
   };
 
   const handleAddBalance = (amount, customLabel) => {
@@ -785,6 +971,7 @@ export default function App() {
       ? wishlist.filter((id) => id !== courseId)
       : [...wishlist, courseId];
     setWishlist(updated);
+    pushNotification(exists ? "تمت إزالة الكورس من المفضلة" : "تمت إضافة الكورس إلى المفضلة ❤️");
   };
 
   const handleEnrollWithWallet = (course) => {
@@ -825,6 +1012,7 @@ export default function App() {
     };
     setCurrentUser(updated);
     setRegisteredUsers(registeredUsers.map((u) => (u.id === currentUser.id ? updated : u)));
+    if (!exists) pushNotification("عاش! أتممت محاضرة جديدة بنجاح ✅");
   };
 
   const handleSaveExamScore = (courseId, resultData) => {
@@ -940,6 +1128,29 @@ export default function App() {
   return (
     <Router>
       <ScrollToTopOnNavigate />
+      <InteractiveScrollWidgets />
+      <QuickCommandPalette
+        isOpen={isCommandOpen}
+        onClose={(action) => setIsCommandOpen(action === "open")}
+        courses={courses}
+      />
+
+      {/* إشعار حي منبثق (Live Toast) */}
+      {liveToast && (
+        <div className="fixed bottom-6 right-6 z-50 max-w-sm bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 px-4 py-3.5 rounded-2xl shadow-2xl border border-neutral-800 dark:border-neutral-200 flex items-center gap-3 animate-toast">
+          <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 dark:text-emerald-600 flex items-center justify-center shrink-0">
+            <BellRing className="w-4 h-4" />
+          </div>
+          <p className="text-xs font-bold leading-relaxed">{liveToast.title}</p>
+          <button
+            onClick={() => setLiveToast(null)}
+            className="text-neutral-400 hover:text-white dark:hover:text-neutral-900 mr-1 cursor-pointer"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       <div className="min-h-screen flex flex-col bg-[#FAFAFA] dark:bg-[#0A0A0A] text-neutral-900 dark:text-neutral-100 transition-colors">
         <Navbar
           courses={courses}
@@ -955,7 +1166,7 @@ export default function App() {
           transactions={transactions}
         />
 
-        <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10">
+        <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-10 animate-fade-up">
           <Routes>
             <Route
               path="/"
@@ -1044,7 +1255,6 @@ export default function App() {
                 />
               }
             />
-            {/* صفحة 404 لأي مسار غير موجود */}
             <Route
               path="*"
               element={
