@@ -13,8 +13,7 @@ import {
   Search,
   ArrowLeft,
   Menu,
-  X,
-  Sparkles
+  X
 } from "lucide-react";
 
 export default function Navbar({
@@ -87,27 +86,25 @@ export default function Navbar({
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full bg-white/90 dark:bg-[#0B0B0B]/90 backdrop-blur-xl border-b border-neutral-200/80 dark:border-neutral-800/80 transition-colors">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-3">
+      <header className="sticky top-0 z-40 w-full max-w-full bg-white/95 dark:bg-[#0B0B0B]/95 backdrop-blur-xl border-b border-neutral-200/80 dark:border-neutral-800/80 transition-colors">
+        <div className="max-w-7xl w-full mx-auto px-2.5 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-1.5 sm:gap-3">
           
-          {/* لوجو مَدار التفاعلي الكبير + الروابط */}
-          <div className="flex items-center gap-6 lg:gap-9 shrink-0">
+          {/* اللوجو المتجاوب + روابط الديسكتوب */}
+          <div className="flex items-center gap-3 lg:gap-8 min-w-0 shrink-0">
             <Link
               to="/"
               onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-              className="madar-logo-link group flex items-center gap-3 select-none"
+              className="madar-logo-link group flex items-center gap-2 sm:gap-3 select-none shrink-0"
               title="منصة مَدار التعليمية"
             >
-              {/* أيقونة شعار مَدار */}
-              <div className="relative w-11 h-11 bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 rounded-2xl flex items-center justify-center font-black text-xl shadow-md group-hover:rotate-6 group-hover:scale-110 transition-all duration-300 shrink-0 overflow-hidden">
+              <div className="relative w-9 h-9 sm:w-11 sm:h-11 bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 rounded-xl sm:rounded-2xl flex items-center justify-center font-black text-base sm:text-xl shadow-md group-hover:rotate-6 group-hover:scale-105 transition-all duration-300 shrink-0 overflow-hidden">
                 <span>م</span>
-                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-emerald-500" />
               </div>
 
-              {/* كلمة مَدار بحروف تتفكك وتتركب وتلمع عند مرور الماوس */}
               <div className="flex flex-col">
                 <div
-                  className="madar-word text-2xl sm:text-3xl font-black tracking-tight text-neutral-950 dark:text-white leading-none"
+                  className="madar-word text-xl sm:text-3xl font-black tracking-tight text-neutral-950 dark:text-white leading-none"
                   aria-label="مَدار"
                 >
                   <span
@@ -141,14 +138,13 @@ export default function Navbar({
                     .
                   </span>
                 </div>
-                <span className="text-[10px] font-bold text-neutral-400 dark:text-neutral-500 tracking-wider mt-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                <span className="hidden sm:block text-[10px] font-bold text-neutral-400 dark:text-neutral-500 tracking-wider mt-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                   أكاديمية علوم الحاسب
                 </span>
               </div>
             </Link>
 
-            {/* روابط الديسكتوب */}
-            <nav className="hidden md:flex items-center gap-1.5 lg:gap-2 text-xs lg:text-sm font-bold">
+            <nav className="hidden md:flex items-center gap-1 lg:gap-2 text-xs lg:text-sm font-bold">
               <Link to="/" className={isActive("/")}>
                 الرئيسية
               </Link>
@@ -173,36 +169,33 @@ export default function Navbar({
             </nav>
           </div>
 
-          {/* الأدوات والأيقونات */}
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* الأدوات والأيقونات المتجاوبة للموبايل والديسكتوب */}
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             
             {/* زر البحث */}
             <button
               onClick={() => setShowSearchModal(true)}
-              title="بحث في الكورسات (Ctrl + K)"
-              className="px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100/80 dark:bg-neutral-900 hover:border-neutral-400 dark:hover:border-neutral-700 text-neutral-700 dark:text-neutral-300 flex items-center gap-2 text-xs font-bold transition cursor-pointer"
+              title="بحث في الكورسات"
+              className="p-2 sm:px-3 sm:py-2 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100/80 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 flex items-center justify-center gap-1.5 text-xs font-bold transition cursor-pointer shrink-0"
             >
-              <Search className="w-3.5 h-3.5 text-emerald-500" />
-              <span className="hidden sm:inline">بحث سريع</span>
-              <span className="hidden lg:inline-block px-1.5 py-0.5 rounded bg-white dark:bg-neutral-800 text-[10px] font-mono opacity-75 border border-neutral-200 dark:border-neutral-700">
-                Ctrl+K
-              </span>
+              <Search className="w-4 h-4 text-emerald-500 shrink-0" />
+              <span className="hidden sm:inline">بحث</span>
             </button>
 
             {/* الوضع الليلي / النهاري */}
             <button
               onClick={onToggleDarkMode}
               title={darkMode ? "تفعيل الوضع الفاتح" : "تفعيل الوضع الداكن"}
-              className="p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100/80 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:border-neutral-400 transition cursor-pointer"
+              className="p-2 sm:p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100/80 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 transition cursor-pointer shrink-0"
             >
               {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
             </button>
 
-            {/* المحفوظات */}
+            {/* المحفوظات (تظهر في التابلت والديسكتوب وموجودة في قائمة الموبايل) */}
             <Link
               to="/courses?filter=saved"
               title="الكورسات المحفوظة"
-              className="hidden sm:flex relative p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100/80 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:border-neutral-400 transition"
+              className="hidden sm:flex relative p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100/80 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 transition shrink-0"
             >
               <Bookmark className="w-4 h-4" />
               {wishlist.length > 0 && (
@@ -213,26 +206,23 @@ export default function Navbar({
             </Link>
 
             {/* جرس الإشعارات */}
-            <div className="relative">
+            <div className="relative shrink-0">
               <button
                 onClick={() => {
                   setShowNotifDropdown(!showNotifDropdown);
                   setNotifSeen(true);
                 }}
                 title="الإشعارات"
-                className="relative p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100/80 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 hover:border-neutral-400 transition cursor-pointer"
+                className="relative p-2 sm:p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-100/80 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 transition cursor-pointer"
               >
                 <Bell className="w-4 h-4" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                )}
                 {unreadCount > 0 && (
                   <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-emerald-500" />
                 )}
               </button>
 
               {showNotifDropdown && (
-                <div className="fixed inset-x-3 top-20 sm:absolute sm:inset-x-auto sm:left-0 sm:top-full sm:mt-2 sm:w-80 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-2xl overflow-hidden z-50 animate-fade-up">
+                <div className="fixed inset-x-3 top-18 sm:absolute sm:inset-x-auto sm:left-0 sm:top-full sm:mt-2 sm:w-80 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-2xl overflow-hidden z-50">
                   <div className="p-3.5 border-b border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
                     <span className="text-xs font-black text-neutral-950 dark:text-white">
                       الإشعارات ({notifications.length})
@@ -271,24 +261,24 @@ export default function Navbar({
               )}
             </div>
 
-            {/* زر المحفظة والدفع */}
+            {/* زر المحفظة المضغوط للموبايل */}
             <Link
               to="/wallet"
               title="بوابة الدفع وشحن المحفظة"
-              className="flex items-center gap-1.5 sm:gap-2 bg-neutral-100/80 dark:bg-neutral-900 hover:border-emerald-500/50 border border-neutral-200 dark:border-neutral-800 px-2.5 sm:px-3.5 py-2 rounded-xl transition shrink-0"
+              className="flex items-center gap-1 sm:gap-2 bg-neutral-100/80 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 px-2 sm:px-3 py-1.5 sm:py-2 rounded-xl transition shrink-0"
             >
-              <Wallet className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span className="text-[11px] sm:text-xs font-black text-neutral-950 dark:text-white whitespace-nowrap">
                 {currentUser ? `${currentUser.walletBalance ?? 0} ج.م` : "شحن"}
               </span>
-              <span className="hidden xs:flex w-4 h-4 rounded-md bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 items-center justify-center">
+              <span className="hidden sm:flex w-4 h-4 rounded-md bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 items-center justify-center">
                 <Plus className="w-3 h-3" />
               </span>
             </Link>
 
             {/* حساب المستخدم للديسكتوب */}
             {currentUser ? (
-              <div className="hidden sm:flex items-center gap-2 bg-neutral-100/80 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 px-3 py-1.5 rounded-xl">
+              <div className="hidden sm:flex items-center gap-2 bg-neutral-100/80 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 px-3 py-1.5 rounded-xl shrink-0">
                 <Link to="/dashboard" className="flex items-center gap-2">
                   <div className="w-7 h-7 rounded-lg bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 flex items-center justify-center">
                     <User className="w-3.5 h-3.5" />
@@ -314,7 +304,7 @@ export default function Navbar({
             ) : (
               <Link
                 to="/login"
-                className="hidden sm:inline-flex items-center gap-1.5 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-950 text-xs font-black px-4 py-2.5 rounded-xl transition shadow-xs"
+                className="hidden sm:inline-flex items-center gap-1.5 bg-neutral-950 dark:bg-white hover:bg-neutral-800 dark:hover:bg-neutral-200 text-white dark:text-neutral-950 text-xs font-black px-4 py-2.5 rounded-xl transition shrink-0"
               >
                 <span>دخول</span>
                 <ArrowLeft className="w-3.5 h-3.5" />
@@ -325,7 +315,7 @@ export default function Navbar({
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="القائمة"
-              className="md:hidden p-2.5 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 cursor-pointer shrink-0"
+              className="md:hidden p-2 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-neutral-950 text-white dark:bg-white dark:text-neutral-950 cursor-pointer shrink-0"
             >
               {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
@@ -335,15 +325,15 @@ export default function Navbar({
 
         {/* قائمة الهاتف المنسدلة */}
         {mobileMenuOpen && (
-          <div className="md:hidden bg-white dark:bg-[#121212] border-t border-neutral-200 dark:border-neutral-800 px-4 py-4 space-y-3 shadow-xl animate-fade-up">
+          <div className="md:hidden bg-white dark:bg-[#121212] border-t border-neutral-200 dark:border-neutral-800 px-4 py-4 space-y-3 shadow-xl">
             {currentUser ? (
               <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 flex items-center justify-center font-bold text-xs">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-8 h-8 rounded-full bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 flex items-center justify-center font-bold text-xs shrink-0">
                     <User className="w-4 h-4" />
                   </div>
-                  <div>
-                    <p className="text-xs font-black text-neutral-950 dark:text-white">
+                  <div className="min-w-0">
+                    <p className="text-xs font-black text-neutral-950 dark:text-white truncate">
                       {currentUser.name}
                     </p>
                     <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold">
@@ -356,7 +346,7 @@ export default function Navbar({
                     onLogout();
                     setMobileMenuOpen(false);
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-600 text-xs font-bold flex items-center gap-1 cursor-pointer"
+                  className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-600 text-xs font-bold flex items-center gap-1 cursor-pointer shrink-0"
                 >
                   <LogOut className="w-3.5 h-3.5" />
                   خروج
@@ -432,7 +422,7 @@ export default function Navbar({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden animate-toast"
+            className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl max-w-xl w-full shadow-2xl overflow-hidden"
           >
             <div className="p-3.5 sm:p-4 border-b border-neutral-200 dark:border-neutral-800 flex items-center gap-3">
               <Search className="w-4 h-4 text-emerald-500 shrink-0" />
@@ -442,11 +432,11 @@ export default function Navbar({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="اكتب اسم الكورس أو اسم المحاضر..."
-                className="flex-grow bg-transparent text-xs sm:text-sm font-bold text-neutral-950 dark:text-white focus:outline-none"
+                className="flex-grow bg-transparent text-xs sm:text-sm font-bold text-neutral-950 dark:text-white focus:outline-none min-w-0"
               />
               <button
                 onClick={() => setShowSearchModal(false)}
-                className="text-xs font-bold bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 px-2.5 py-1 rounded-lg cursor-pointer"
+                className="text-xs font-bold bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-300 px-2.5 py-1 rounded-lg cursor-pointer shrink-0"
               >
                 إغلاق
               </button>
