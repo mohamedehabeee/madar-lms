@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import {
   Search,
   ArrowLeft,
@@ -26,10 +26,33 @@ export default function Home({
 }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("الكل");
-  const [sortBy, setSortBy] = useState("default"); // default | rating | price-asc
+  const [sortBy, setSortBy] = useState("default");
   const [openFaq, setOpenFaq] = useState(0);
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const sliderRef = useRef(null);
+
+  // الاستجابة للضغط على روابط الـ Footer والانتقال للسكشن أو التخصص المقصود بالظبط
+  useEffect(() => {
+    const catParam = searchParams.get("cat");
+    if (catParam) {
+      const matchedCat = courses.find((c) =>
+        c.category?.includes(catParam) || catParam.includes(c.category)
+      )?.category;
+      setActiveCategory(matchedCat || (catParam === "الكل" ? "الكل" : activeCategory));
+    }
+
+    if (location.hash) {
+      const targetId = location.hash.replace("#", "");
+      setTimeout(() => {
+        const el = document.getElementById(targetId);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 120);
+    }
+  }, [location.hash, searchParams, courses]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -40,7 +63,6 @@ export default function Home({
     }
   };
 
-  // نتائج البحث الفوري المنسدلة أثناء الكتابة
   const liveSearchResults = searchQuery.trim()
     ? courses
         .filter(
@@ -89,7 +111,6 @@ export default function Home({
       )
     : null;
 
-  // حساب نسبة التقدم الفعلية في آخر كورس بدأه الطالب
   const getLastCourseProgress = () => {
     if (!lastEnrolledCourse || !currentUser) return 0;
     const allLessons =
@@ -103,7 +124,6 @@ export default function Home({
 
   const lastCourseProgress = getLastCourseProgress();
 
-  // بيانات المحاضرين بالصور وسنوات الخبرة والمواد الدراسية
   const instructors = [
     {
       name: "م. أحمد طارق",
@@ -158,7 +178,7 @@ export default function Home({
   return (
     <div className="space-y-16 animate-fade-up">
       
-      {/* شريط استكمال المذاكرة (لو الطالب مسجل دخول) */}
+      {/* شريط استكمال المذاكرة */}
       {currentUser && lastEnrolledCourse && (
         <section className="bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 transition-all hover:border-neutral-400 dark:hover:border-neutral-700">
           <div className="flex items-center gap-3.5 min-w-0">
@@ -200,7 +220,7 @@ export default function Home({
       )}
 
       {/* الجزء الافتتاحي (Hero) */}
-      <section className="bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 sm:p-12">
+      <section id="hero-section" className="scroll-mt-24 bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 sm:p-12">
         <div className="max-w-3xl space-y-5">
           <span className="inline-block text-xs font-bold text-neutral-500 dark:text-neutral-400 border-b border-neutral-300 dark:border-neutral-700 pb-1">
             منصة مَدار التعليمية
@@ -235,7 +255,6 @@ export default function Home({
                   </button>
                 )}
 
-                {/* قائمة نتائج البحث اللحظية */}
                 {liveSearchResults.length > 0 && (
                   <div className="absolute top-full right-0 left-0 mt-2 bg-white dark:bg-[#161616] border border-neutral-200 dark:border-neutral-800 rounded-xl shadow-xl z-30 overflow-hidden divide-y divide-neutral-100 dark:divide-neutral-800/70 animate-fade-up">
                     {liveSearchResults.map((course) => (
@@ -269,7 +288,6 @@ export default function Home({
               </button>
             </form>
 
-            {/* اختصارات بحث سريعة وهادئة */}
             <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-neutral-500">
               <span>مواد شائعة:</span>
               {["C# OOP", "React", "هياكل البيانات", "الفلسفة والمنطق"].map((tag) => (
@@ -309,7 +327,7 @@ export default function Home({
       </section>
 
       {/* قسم الكورسات بالاسكرول الأفقي */}
-      <section className="space-y-6">
+      <section id="courses-section" className="scroll-mt-24 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
           <div>
             <h2 className="text-xl sm:text-2xl font-black text-neutral-950 dark:text-white">
@@ -406,7 +424,7 @@ export default function Home({
       </section>
 
       {/* نظام الدراسة على المنصة */}
-      <section className="bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 sm:p-10">
+      <section id="study-system" className="scroll-mt-24 bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 sm:p-10">
         <div className="mb-8">
           <h2 className="text-xl sm:text-2xl font-black text-neutral-950 dark:text-white">
             نظام الدراسة على المنصة
@@ -467,10 +485,8 @@ export default function Home({
         </div>
       </section>
 
-      {/* =====================================================================
-          قسم المحاضرين (كروت أكبر + صور شخصية + سنوات الخبرة + المواد)
-      ===================================================================== */}
-      <section className="space-y-6">
+      {/* قسم المحاضرين */}
+      <section id="instructors-section" className="scroll-mt-24 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
           <div>
             <h2 className="text-xl sm:text-2xl font-black text-neutral-950 dark:text-white">
@@ -490,7 +506,6 @@ export default function Home({
               className="group bg-white dark:bg-[#121212] p-6 sm:p-7 rounded-2xl border border-neutral-200 dark:border-neutral-800 hover:border-neutral-950 dark:hover:border-neutral-400 hover:-translate-y-1 transition-all duration-200 cursor-pointer flex flex-col justify-between gap-6 shadow-2xs"
             >
               <div className="space-y-5">
-                {/* الصورة + الاسم + سنوات الخبرة */}
                 <div className="flex items-start gap-4">
                   <img
                     src={inst.image}
@@ -520,12 +535,10 @@ export default function Home({
                   </div>
                 </div>
 
-                {/* نبذة مختصرة عن المحاضر */}
                 <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
                   {inst.bio}
                 </p>
 
-                {/* المواد والتخصصات اللي بيدرسها */}
                 <div className="space-y-2">
                   <span className="block text-[11px] font-bold text-neutral-400">
                     المواد والكورسات:
@@ -548,7 +561,6 @@ export default function Home({
                 </div>
               </div>
 
-              {/* الفوتر السفلي لكارت المحاضر */}
               <div className="pt-4 border-t border-neutral-100 dark:border-neutral-800/80 flex items-center justify-between text-xs">
                 <div className="flex items-center gap-3 text-neutral-500">
                   <span className="flex items-center gap-1">
@@ -573,7 +585,7 @@ export default function Home({
       </section>
 
       {/* الأسئلة الشائعة */}
-      <section className="max-w-3xl mx-auto">
+      <section id="faq-section" className="scroll-mt-24 max-w-3xl mx-auto">
         <div className="mb-6">
           <h2 className="text-xl sm:text-2xl font-black text-neutral-950 dark:text-white">
             أسئلة متكررة
