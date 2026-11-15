@@ -53,35 +53,35 @@ export default function Courses({
     });
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8 animate-fade-up px-1 sm:px-0">
       <div>
         <h1 className="text-2xl sm:text-3xl font-black text-neutral-950 dark:text-white">
           تصفح جميع الكورسات
         </h1>
-        <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+        <p className="text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 mt-1.5">
           ابحث باسم المادة أو المدرس، أو استعرض قائمة الكورسات المحفوظة لديك
         </p>
       </div>
 
-      <div className="bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4 sm:p-5 space-y-4">
-        <div className="flex flex-col md:flex-row gap-3">
+      <div className="bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 rounded-2xl p-4 sm:p-5 space-y-4 shadow-sm">
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-grow">
-            <Search className="w-4 h-4 text-neutral-400 absolute right-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-emerald-500 absolute right-3.5 top-1/2 -translate-y-1/2 shrink-0" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="ابحث باسم الكورس أو اسم المدرس..."
-              className="w-full pr-10 pl-4 py-2.5 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-sm focus:outline-none focus:border-neutral-950 dark:focus:border-white transition"
+              placeholder="ابحث باسم الكورس أو المحاضر..."
+              className="w-full pr-10 pl-4 py-2.5 sm:py-3 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs sm:text-sm font-bold focus:outline-none focus:border-neutral-950 dark:focus:border-white transition"
             />
           </div>
 
-          <div className="flex items-center gap-2">
-            <SlidersHorizontal className="w-4 h-4 text-neutral-400 hidden sm:block" />
+          <div className="flex items-center gap-2 bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 rounded-xl px-3 py-2.5 sm:py-3 shrink-0">
+            <SlidersHorizontal className="w-4 h-4 text-emerald-500 shrink-0" />
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="py-2.5 px-4 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-200 dark:border-neutral-800 text-xs sm:text-sm font-bold text-neutral-800 dark:text-neutral-200 focus:outline-none cursor-pointer"
+              className="bg-transparent border-none text-xs sm:text-sm font-bold text-neutral-800 dark:text-neutral-200 focus:outline-none cursor-pointer w-full sm:w-auto"
             >
               <option value="popular">الأكثر اشتراكاً</option>
               <option value="rating">الأعلى تقييماً</option>
@@ -91,51 +91,54 @@ export default function Courses({
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-neutral-100 dark:border-neutral-800/80">
-          {categories.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
-                selectedCategory === cat
-                  ? "bg-neutral-950 text-white dark:bg-white dark:text-neutral-950"
-                  : "bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800"
-              }`}
-            >
-              {cat === "المحفوظات" && <Bookmark className="w-3.5 h-3.5" />}
-              {cat}
-              {cat === "المحفوظات" && ` (${wishlist.length})`}
-            </button>
-          ))}
+        <div className="pt-3 border-t border-neutral-100 dark:border-neutral-800/80 w-full overflow-hidden">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+            {categories.map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-4 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 whitespace-nowrap shrink-0 transition cursor-pointer ${
+                  selectedCategory === cat
+                    ? "bg-neutral-950 text-white dark:bg-white dark:text-neutral-950"
+                    : "bg-neutral-100 dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-200 dark:hover:bg-neutral-800"
+                }`}
+              >
+                {cat === "المحفوظات" && <Bookmark className="w-3.5 h-3.5" />}
+                {cat}
+                {cat === "المحفوظات" && ` (${wishlist.length})`}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {filteredCourses.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
           {filteredCourses.map((course) => (
-            <CourseCard
-              key={course.id}
-              course={course}
-              isEnrolled={currentUser?.enrolledCourses?.includes(course.id)}
-              isSaved={wishlist.includes(course.id)}
-              onToggleWishlist={onToggleWishlist}
-            />
+            <div key={course.id} className="w-full flex flex-col h-full">
+              <CourseCard
+                course={course}
+                isEnrolled={currentUser?.enrolledCourses?.includes(course.id)}
+                isSaved={wishlist.includes(course.id)}
+                onToggleWishlist={onToggleWishlist}
+              />
+            </div>
           ))}
         </div>
       ) : (
-        <div className="bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 rounded-2xl p-12 text-center">
-          <p className="text-base font-bold text-neutral-800 dark:text-neutral-200 mb-2">
-            لا توجد كورسات في هذا القسم حالياً
+        <div className="bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 rounded-2xl p-10 sm:p-14 text-center">
+          <p className="text-sm sm:text-base font-bold text-neutral-800 dark:text-neutral-200 mb-3">
+            لا توجد كورسات مطابقة لعملية البحث الحالية.
           </p>
           <button
             onClick={() => {
               setSearchTerm("");
               setSelectedCategory("الكل");
             }}
-            className="mt-3 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-xs font-bold cursor-pointer"
+            className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 rounded-xl bg-neutral-950 dark:bg-white text-white dark:text-neutral-950 text-xs font-bold cursor-pointer"
           >
-            <RotateCcw className="w-3.5 h-3.5" />
-            عرض جميع الكورسات
+            <RotateCcw className="w-4 h-4" />
+            إعادة ضبط الفلتر
           </button>
         </div>
       )}
