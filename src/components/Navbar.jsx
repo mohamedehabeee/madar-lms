@@ -33,8 +33,13 @@ export default function Navbar({
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [notifSeen, setNotifSeen] = useState(false);
 
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const unreadCount = notifSeen ? 0 : notifications.filter((n) => !n.read).length;
+
+  useEffect(() => {
+    setNotifSeen(false);
+  }, [notifications.length]);
 
   useEffect(() => {
     setMobileMenuOpen(false);
@@ -104,14 +109,17 @@ export default function Navbar({
           {/* الأدوات والأيقونات */}
           <div className="flex items-center gap-1.5 sm:gap-2">
             
-            {/* زر البحث البسيط والواضح */}
+            {/* زر البحث */}
             <button
               onClick={() => setShowSearchModal(true)}
-              title="بحث في الكورسات"
+              title="بحث في الكورسات (Ctrl + K)"
               className="px-2.5 sm:px-3 py-1.5 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 flex items-center gap-1.5 text-xs font-bold transition cursor-pointer"
             >
               <Search className="w-3.5 h-3.5" />
               <span>بحث</span>
+              <span className="hidden lg:inline-block text-[10px] font-mono opacity-60">
+                Ctrl+K
+              </span>
             </button>
 
             {/* الوضع الليلي / النهاري */}
@@ -140,7 +148,10 @@ export default function Navbar({
             {/* جرس الإشعارات */}
             <div className="relative">
               <button
-                onClick={() => setShowNotifDropdown(!showNotifDropdown)}
+                onClick={() => {
+                  setShowNotifDropdown(!showNotifDropdown);
+                  setNotifSeen(true);
+                }}
                 title="الإشعارات"
                 className="relative p-2 rounded-lg border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 text-neutral-700 dark:text-neutral-300 transition cursor-pointer"
               >
@@ -217,7 +228,7 @@ export default function Navbar({
                       {currentUser.name}
                     </p>
                     <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
-                      {currentUser.role === "student" ? "طالب" : "مدرّس"}
+                      {currentUser.role === "student" ? "طالب" : "إدارة"}
                     </span>
                   </div>
                 </Link>

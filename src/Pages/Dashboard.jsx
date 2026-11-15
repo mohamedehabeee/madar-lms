@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, Navigate } from "react-router-dom";
 import {
   BookOpen,
@@ -17,12 +17,17 @@ import {
   HelpCircle,
   UserCog,
   CreditCard,
-  BellRing
+  BellRing,
+  Lock,
+  Ticket,
+  Copy,
+  Check
 } from "lucide-react";
 
 export default function Dashboard({
   courses,
   currentUser,
+  accessCodes = [],
   onAddCourse,
   onDeleteCourse,
   onAddLessonToCourse,
@@ -32,6 +37,16 @@ export default function Dashboard({
   const [certificateCourse, setCertificateCourse] = useState(null);
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState(currentUser?.name || "");
+
+  const [codesList, setCodesList] = useState(() => {
+    const saved = localStorage.getItem("lms_codes");
+    return saved ? JSON.parse(saved) : accessCodes;
+  });
+  const [copiedCode, setCopiedCode] = useState("");
+
+  useEffect(() => {
+    localStorage.setItem("lms_codes", JSON.stringify(codesList));
+  }, [codesList]);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [newCourse, setNewCourse] = useState({
@@ -65,7 +80,6 @@ export default function Dashboard({
   const examScores = currentUser.examScores || {};
   const passedExamsCount = Object.values(examScores).filter((s) => s.passed).length;
 
-  // تنبيهات المحاضرين الواقعية للطلاب
   const instructorAnnouncements = [
     {
       id: 1,
@@ -95,6 +109,22 @@ export default function Dashboard({
     if (!nameInput.trim() || !onUpdateProfileName) return;
     onUpdateProfileName(nameInput.trim());
     setEditingName(false);
+  };
+
+  const handleGenerateNewCode = () => {
+    const randomPart = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const generated = {
+      code: `MDR-${randomPart}`,
+      courseId: targetCourseId,
+      used: false
+    };
+    setCodesList([generated, ...codesList]);
+  };
+
+  const handleCopyCode = (codeStr) => {
+    navigator.clipboard.writeText(codeStr);
+    setCopiedCode(codeStr);
+    setTimeout(() => setCopiedCode(""), 2000);
   };
 
   const handleCreateCourse = (e) => {
@@ -265,6 +295,7 @@ export default function Dashboard({
                       ? Math.round((doneCount / lessons.length) * 100)
                       : 0;
                   const examResult = examScores[course.id];
+                  const canClaimCertificate = percent === 100 || examResult?.passed;
 
                   return (
                     <div
@@ -326,13 +357,23 @@ export default function Dashboard({
                           </Link>
                         )}
 
-                        <button
-                          onClick={() => setCertificateCourse(course)}
-                          className="py-2.5 px-3 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 text-xs font-bold flex items-center gap-1 cursor-pointer"
-                        >
-                          <Award className="w-4 h-4" />
-                          الشهادة
-                        </button>
+                        {canClaimCertificate ? (
+                          <button
+                            onClick={() => setCertificateCourse(course)}
+                            className="py-2.5 px-3 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/20 text-xs font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            <Award className="w-4 h-4" />
+                            الشهادة
+                          </button>
+                        ) : (
+                          <span
+                            title="اجتز الامتحان أو أكمل جميع المحاضرات لفتح الشهادة"
+                            className="py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-neutral-900 text-neutral-400 border border-neutral-200 dark:border-neutral-800 text-xs font-bold flex items-center gap-1 cursor-not-allowed"
+                          >
+                            <Lock className="w-3.5 h-3.5" />
+                            الشهادة
+                          </span>
+                        )}
                       </div>
                     </div>
                   );
@@ -534,6 +575,66 @@ export default function Dashboard({
                   + إدراج السؤال في امتحان الكورس
                 </button>
               </form>
+            </div>
+          </div>
+
+          {/* قسم توليد وإدارة أكواد التفعيل الفورية للطلاب */}
+          <div className="bg-white dark:bg-[#121212] border border-neutral-200 dark:border-neutral-800 rounded-2xl p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-black text-neutral-950 dark:text-white flex items-center gap-2">
+                  <Ticket className="w-5 h-5 text-emerald-500" />
+                  أكواد التفعيل المباشر للطلاب ({codesList.length})
+                </h2>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  أنشئ أكواد تفعيل فورية ليتمكن الطالب من فتح الكورس مباشرة من صفحة تفاصيل الكورس
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleGenerateNewCode}
+                className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-neutral-950 text-xs font-black flex items-center gap-1.5 cursor-pointer shrink-0"
+              >
+                <Plus className="w-4 h-4" />
+                توليد كود تفعيل جديد
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+              {codesList.slice(0, 8).map((item, idx) => (
+                <div
+                  key={idx}
+                  className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 flex items-center justify-between gap-2"
+                >
+                  <div>
+                    <strong className="font-mono text-xs font-black text-neutral-950 dark:text-white block">
+                      {item.code}
+                    </strong>
+                    <span
+                      className={`text-[10px] font-bold ${
+                        item.used ? "text-red-500" : "text-emerald-600 dark:text-emerald-400"
+                      }`}
+                    >
+                      {item.used ? "مُستخدم" : "متاح للتفعيل"}
+                    </span>
+                  </div>
+
+                  {!item.used && (
+                    <button
+                      type="button"
+                      onClick={() => handleCopyCode(item.code)}
+                      className="p-1.5 rounded-lg bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 text-xs font-bold cursor-pointer"
+                    >
+                      {copiedCode === item.code ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5 text-neutral-500" />
+                      )}
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
 

@@ -15,7 +15,8 @@ import {
   Infinity,
   CreditCard,
   Share2,
-  Check
+  Check,
+  Ticket
 } from "lucide-react";
 
 export default function CourseDetails({
@@ -27,6 +28,7 @@ export default function CourseDetails({
   const navigate = useNavigate();
   const [feedback, setFeedback] = useState({ type: "", message: "" });
   const [linkCopied, setLinkCopied] = useState(false);
+  const [promoCode, setPromoCode] = useState("");
 
   const [reviews, setReviews] = useState(() => {
     const saved = localStorage.getItem(`lms_reviews_${id}`);
@@ -74,7 +76,6 @@ export default function CourseDetails({
   const userBalance = currentUser?.walletBalance ?? 0;
   const hasEnoughBalance = userBalance >= course.price;
 
-  // نسخ رابط الكورس للمشاركة
   const handleCopyCourseLink = () => {
     navigator.clipboard.writeText(window.location.href);
     setLinkCopied(true);
@@ -93,13 +94,55 @@ export default function CourseDetails({
     });
   };
 
+  // تفعيل الكورس باستخدام كود تفعيل السنتر
+  const handleRedeemCode = (e) => {
+    e.preventDefault();
+    if (!currentUser) {
+      navigate("/login");
+      return;
+    }
+    const cleanCode = promoCode.trim().toUpperCase();
+    if (!cleanCode) return;
+
+    const savedCodes = JSON.parse(localStorage.getItem("lms_codes") || "[]");
+    const foundCode = savedCodes.find(
+      (c) => c.code?.toUpperCase() === cleanCode && !c.used
+    );
+
+    if (!foundCode) {
+      setFeedback({
+        type: "error",
+        message: "كود التفعيل غير صحيح أو تم استخدامه مسبقاً."
+      });
+      return;
+    }
+
+    const updatedCodes = savedCodes.map((c) =>
+      c.code?.toUpperCase() === cleanCode
+        ? { ...c, used: true, usedBy: currentUser.name }
+        : c
+    );
+    localStorage.setItem("lms_codes", JSON.stringify(updatedCodes));
+
+    onEnrollWithWallet({ ...course, price: 0 });
+    setPromoCode("");
+    setFeedback({
+      type: "success",
+      message: "تم تفعيل الكود وفتح الكورس على حسابك بنجاح!"
+    });
+  };
+
   const handleAddReview = (e) => {
     e.preventDefault();
+    if (!currentUser) {
+      navigate("/login");
+      return;
+    }
     if (!newComment.trim()) return;
 
     const added = {
       id: Date.now(),
-      name: currentUser?.name || "طالب بالمنصة",
+      name: currentUser.name,
       rating: newRating,
       date: "الآن",
       comment: newComment.trim()
@@ -122,7 +165,6 @@ export default function CourseDetails({
               {course.category}
             </span>
 
-            {/* زر مشاركة الكورس ونسخ الرابط */}
             <button
               type="button"
               onClick={handleCopyCourseLink}
@@ -299,7 +341,11 @@ export default function CourseDetails({
                 type="text"
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                placeholder="اكتب رأيك وتجربتك في الكورس..."
+                placeholder={
+                  currentUser
+                    ? "اكتب رأيك وتجربتك في الكورس..."
+                    : "سجل دخولك أولاً لإضافة تقييمك..."
+                }
                 className="flex-grow px-3.5 py-2 rounded-xl bg-white dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 text-xs focus:outline-none focus:border-neutral-950 dark:focus:border-white"
               />
               <button
@@ -423,6 +469,33 @@ export default function CourseDetails({
                 <CreditCard className="w-4 h-4 text-emerald-500" />
                 شحن الرصيد (فيزا • فودافون كاش • InstaPay)
               </Link>
+
+              {/* تفعيل الكورس بكود السنتر */}
+              <form
+                onSubmit={handleRedeemCode}
+                className="pt-3 border-t border-neutral-100 dark:border-neutral-800 space-y-2"
+              >
+                <label className="block text-[11px] font-bold text-neutral-500 flex items-center gap-1.5">
+                  <Ticket className="w-3.5 h-3.5 text-emerald-500" />
+                  معاك كود تفعيل مباشر من السنتر؟
+                </label>
+                <div className="flex gap-1.5">
+                  <input
+                    type="text"
+                    dir="ltr"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value)}
+                    placeholder="MDR-XXXX"
+                    className="flex-grow px-3 py-2 rounded-xl bg-neutral-50 dark:bg-neutral-950 border border-neutral-300 dark:border-neutral-800 text-xs font-mono uppercase text-center focus:outline-none focus:border-neutral-950 dark:focus:border-white"
+                  />
+                  <button
+                    type="submit"
+                    className="px-3.5 py-2 rounded-xl bg-neutral-200 dark:bg-neutral-800 hover:bg-neutral-300 dark:hover:bg-neutral-700 text-neutral-950 dark:text-white text-xs font-bold shrink-0 cursor-pointer"
+                  >
+                    تفعيل
+                  </button>
+                </div>
+              </form>
             </div>
           )}
 
